@@ -40,18 +40,6 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
-
-
-      - name: Create 404 fallback
-        run: |
-          echo "Current directory: $(pwd)"
-          ls -l frontend/dist
-          cp frontend/dist/index.html frontend/dist/404.html
-          ls -l frontend/dist
-
-      - name: List dist contents (debug)
-        run: ls -l frontend/dist
-
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
