@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Teammate } from '../types';
+import type { Teammate } from '../types';
 
 interface TeammatesCardProps {
   teammates: Teammate[];

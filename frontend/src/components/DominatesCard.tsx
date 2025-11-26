@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Counter } from '../types';
+import type { Counter } from '../types';
 
 interface DominatesCardProps {
   dominates: Counter[];

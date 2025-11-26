@@ -1,6 +1,6 @@
 import React from 'react';
 import { useMetadata } from '../contexts/MetadataContext';
-import { Item } from '../types';
+import type { Item } from '../types';
 import { Tooltip } from './Tooltip';
 
 interface ItemsCardProps {

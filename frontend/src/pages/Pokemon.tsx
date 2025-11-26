@@ -13,7 +13,7 @@ import { TeraTypesCard } from '../components/TeraTypesCard';
 import type { PokemonStats } from '../types';
 import { useRating } from '../contexts/RatingContext';
 import { useQuery } from '@tanstack/react-query';
-import { getApiUrl } from '../utils/api';
+import { getPokemonData } from '../utils/api';
 
 export default function Pokemon() {
   const { formatId, pokemonName } = useParams();
@@ -29,10 +29,7 @@ export default function Pokemon() {
 
   const { data, isLoading: loading, isFetching: isUpdating } = useQuery<PokemonStats>({
     queryKey: ['pokemon', formatId, pokemonName, ratingParam],
-    queryFn: () => fetch(getApiUrl(`api/format/${formatId}/pokemon/${pokemonName}`, { rating: ratingParam })).then(res => {
-        if (!res.ok) throw new Error("Pokemon not found");
-        return res.json();
-    }),
+    queryFn: () => getPokemonData(formatId!, pokemonName!, typeof ratingParam === 'string' ? parseInt(ratingParam) : ratingParam),
     enabled: !!formatId && !!pokemonName
   });
 

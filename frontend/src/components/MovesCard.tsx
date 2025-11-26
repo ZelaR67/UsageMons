@@ -1,6 +1,6 @@
 import React from 'react';
 import { useMetadata } from '../contexts/MetadataContext';
-import { Move } from '../types';
+import type { Move } from '../types';
 import { getTypeColor } from '../utils/colors';
 import { Tooltip } from './Tooltip';
 

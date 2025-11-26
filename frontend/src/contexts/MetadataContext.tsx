@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { getMoves, getItems, getAbilities } from '../utils/api';
 
 interface MoveMeta {
   type: string;
@@ -6,16 +7,19 @@ interface MoveMeta {
   basePower: string | number;
   accuracy: string | number;
   desc: string;
+  shortDesc?: string;
 }
 
 interface ItemMeta {
   name: string;
   desc: string;
+  shortDesc?: string;
 }
 
 interface AbilityMeta {
   name: string;
   desc: string;
+  shortDesc?: string;
 }
 
 interface MetadataContextType {
@@ -43,19 +47,42 @@ export const MetadataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [movesRes, itemsRes, abilitiesRes] = await Promise.all([
-          fetch('/api/meta/moves'),
-          fetch('/api/meta/items'),
-          fetch('/api/meta/abilities')
+        const [movesData, itemsData, abilitiesData] = await Promise.all([
+          getMoves(),
+          getItems(),
+          getAbilities()
         ]);
 
-        const movesData = await movesRes.json();
-        const itemsData = await itemsRes.json();
-        const abilitiesData = await abilitiesRes.json();
+        const movesMap = movesData.reduce((acc: any, move: any) => {
+            acc[move.id] = {
+                type: move.type,
+                category: move.category,
+                basePower: move.base_power,
+                accuracy: move.accuracy,
+                desc: move.description
+            };
+            return acc;
+        }, {});
 
-        setMoves(movesData);
-        setItems(itemsData);
-        setAbilities(abilitiesData);
+        const itemsMap = itemsData.reduce((acc: any, item: any) => {
+            acc[item.id] = {
+                name: item.name,
+                desc: item.description
+            };
+            return acc;
+        }, {});
+
+        const abilitiesMap = abilitiesData.reduce((acc: any, ability: any) => {
+            acc[ability.id] = {
+                name: ability.name,
+                desc: ability.description
+            };
+            return acc;
+        }, {});
+
+        setMoves(movesMap);
+        setItems(itemsMap);
+        setAbilities(abilitiesMap);
       } catch (error) {
         console.error("Failed to load metadata:", error);
       } finally {

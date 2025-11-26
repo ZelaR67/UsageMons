@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { Dropdown } from './Dropdown';
 import { useRating } from '../contexts/RatingContext';
 import { useQuery } from '@tanstack/react-query';
-import { getApiUrl } from '../utils/api';
+import { getFormats, getFormatRatings, getFormatData } from '../utils/api';
 
 const RatingSelector = memo(({ ratings, currentRating, onRatingChange }: { 
   ratings: number[], 
@@ -72,18 +72,18 @@ export const Sidebar = () => {
 
   const { data: formats = [] } = useQuery<{id: string, name: string}[]>({
     queryKey: ['formats'],
-    queryFn: () => fetch(getApiUrl('api/formats')).then(res => res.json())
+    queryFn: () => getFormats()
   });
 
   const { data: availableRatings = [] } = useQuery<number[]>({
     queryKey: ['ratings', formatId],
-    queryFn: () => fetch(getApiUrl(`api/format/${formatId}/ratings`)).then(res => res.json()),
+    queryFn: () => getFormatRatings(formatId!),
     enabled: !!formatId
   });
 
-  const { data: pokemonData } = useQuery<{pokemon: {name: string, usage_percent: number}[], rating: number}>({
+  const { data: pokemonData } = useQuery<{pokemon: {name: string, usage_percent: number}[], rating: number | null}>({
     queryKey: ['pokemonList', formatId, rating],
-    queryFn: () => fetch(getApiUrl(`api/format/${formatId}`, { rating })).then(res => res.json()),
+    queryFn: () => getFormatData(formatId!, rating!),
     enabled: !!formatId
   });
 

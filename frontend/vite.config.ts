@@ -6,11 +6,5 @@ export default defineConfig({
 // ...existing code...
   server: {
     allowedHosts: ['unfascinating-unaxiomatically-lora.ngrok-free.dev'],
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8001',
-        changeOrigin: true,
-      }
-    }
   }
 })

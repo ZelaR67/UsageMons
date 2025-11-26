@@ -1,5 +1,5 @@
 import React from 'react';
-import { Spread } from '../types';
+import type { Spread } from '../types';
 import { Tooltip } from './Tooltip';
 import { calculateStats } from '../utils/stats';
 
@@ -27,7 +27,7 @@ export const SpreadsCard: React.FC<SpreadsCardProps> = ({ spreads, baseStats }) 
       <div className="space-y-1">
         {spreads.map((spread, idx) => {
           const parsed = parseSpread(spread.spread);
-          let tooltipContent = "Cannot calculate stats";
+          let tooltipContent: React.ReactNode = "Cannot calculate stats";
           
           if (parsed && baseStats) {
             const stats = calculateStats(baseStats, parsed.evs, parsed.nature);

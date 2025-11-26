@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { getFormats } from '../utils/api';
 
 interface Format {
   id: string;
@@ -21,8 +22,7 @@ export default function Header() {
       document.documentElement.classList.remove('dark');
     }
 
-    fetch('/api/formats')
-      .then(res => res.json())
+    getFormats()
       .then(data => setFormats(data))
       .catch(err => console.error("Failed to load formats", err));
   }, []);

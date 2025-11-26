@@ -1,5 +1,5 @@
 import React from 'react';
-import { TeraType } from '../types';
+import type { TeraType } from '../types';
 import { getTypeColor } from '../utils/colors';
 
 interface TeraTypesCardProps {

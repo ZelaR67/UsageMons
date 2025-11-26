@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { getFormats } from '../utils/api';
 
 interface Format {
   id: string;
@@ -10,8 +11,7 @@ export default function Home() {
   const [formats, setFormats] = useState<Format[]>([]);
 
   useEffect(() => {
-    fetch('/api/formats')
-      .then(res => res.json())
+    getFormats()
       .then(data => setFormats(data))
       .catch(err => console.error("Failed to load formats", err));
   }, []);

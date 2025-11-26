@@ -3,7 +3,7 @@ import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useRating } from '../contexts/RatingContext';
 import { PokemonSprite } from '../components/PokemonSprite';
 import { useQuery } from '@tanstack/react-query';
-import { getApiUrl } from '../utils/api';
+import { getFormatData } from '../utils/api';
 
 interface PokemonEntry {
   name: string;
@@ -13,7 +13,7 @@ interface PokemonEntry {
 
 interface FormatData {
   format: string;
-  rating: number;
+  rating: number | null;
   pokemon: PokemonEntry[];
 }
 
@@ -31,10 +31,7 @@ export default function Format() {
 
   const { data, isLoading: loading } = useQuery<FormatData>({
     queryKey: ['format', formatId, ratingParam],
-    queryFn: () => fetch(getApiUrl(`api/format/${formatId}`, { rating: ratingParam })).then(res => {
-        if (!res.ok) throw new Error("Format not found");
-        return res.json();
-    }),
+    queryFn: () => getFormatData(formatId!, typeof ratingParam === 'string' ? parseInt(ratingParam) : ratingParam),
     enabled: !!formatId
   });
 
