@@ -25,8 +25,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: npm
           cache-dependency-path: frontend/package-lock.json
+
 
       - name: Install dependencies
         run: npm ci
@@ -38,6 +39,10 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+
+      - name: Create 404 fallback
+        run: cp frontend/dist/index.html frontend/dist/404.html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
