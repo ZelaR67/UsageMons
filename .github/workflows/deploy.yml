@@ -43,7 +43,11 @@ jobs:
 
 
       - name: Create 404 fallback
-        run: cp frontend/dist/index.html frontend/dist/404.html
+        run: |
+          echo "Current directory: $(pwd)"
+          ls -l frontend/dist
+          cp frontend/dist/index.html frontend/dist/404.html
+          ls -l frontend/dist
 
       - name: List dist contents (debug)
         run: ls -l frontend/dist
