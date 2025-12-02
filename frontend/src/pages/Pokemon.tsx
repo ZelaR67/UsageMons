@@ -1,6 +1,11 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { createPortal } from 'react-dom';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import type { Swiper as SwiperType } from 'swiper';
+import 'swiper/css';
+
+import { Sidebar } from '../components/Sidebar';
 import { PokemonHeader } from '../components/PokemonHeader';
 import { MovesCard } from '../components/MovesCard';
 import { ItemsCard } from '../components/ItemsCard';
@@ -28,45 +33,7 @@ export default function Pokemon() {
   const itemsRef = useRef<HTMLButtonElement>(null);
   const abilitiesRef = useRef<HTMLButtonElement>(null);
   const teraRef = useRef<HTMLButtonElement>(null);
-
-  const touchStartX = useRef<number | null>(null);
-  const touchStartY = useRef<number | null>(null);
-  const minSwipeDistance = 50;
-
-  const onTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.targetTouches[0].clientX;
-    touchStartY.current = e.targetTouches[0].clientY;
-  };
-
-  const onTouchMove = (e: React.TouchEvent) => {
-    // Optional: Prevent default here if you want to disable scrolling while swiping horizontally
-    // but be careful as it might block vertical scrolling too if not checked properly.
-  };
-
-  const onTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current === null || touchStartY.current === null) return;
-    
-    const touchEndX = e.changedTouches[0].clientX;
-    const touchEndY = e.changedTouches[0].clientY;
-    
-    const deltaX = touchStartX.current - touchEndX;
-    const deltaY = touchStartY.current - touchEndY;
-
-    // Check if horizontal swipe is dominant
-    if (Math.abs(deltaX) > Math.abs(deltaY)) {
-      if (Math.abs(deltaX) > minSwipeDistance) {
-        if (deltaX > 0 && currentSlide < 5) {
-           setCurrentSlide(currentSlide + 1);
-        }
-        if (deltaX < 0 && currentSlide > 0) {
-           setCurrentSlide(currentSlide - 1);
-        }
-      }
-    }
-    
-    touchStartX.current = null;
-    touchStartY.current = null;
-  };
+  const swiperRef = useRef<SwiperType | null>(null);
 
   const updateUnderline = (tab: 'items' | 'abilities' | 'tera') => {
     const activeRef = tab === 'items' ? itemsRef : tab === 'abilities' ? abilitiesRef : teraRef;
@@ -105,6 +72,13 @@ export default function Pokemon() {
     setSlideTitles(['Overview', 'Moves', 'Build', 'Spreads', 'Teammates', 'Matchups']);
   }, [setTotalSlides, setSlideTitles]);
 
+  // Sync external currentSlide changes to Swiper
+  useEffect(() => {
+    if (swiperRef.current && swiperRef.current.activeIndex !== currentSlide) {
+      swiperRef.current.slideTo(currentSlide);
+    }
+  }, [currentSlide]);
+
   useEffect(() => {
     const element = document.getElementById('sidebar-dex-info');
     if (element) {
@@ -140,15 +114,7 @@ export default function Pokemon() {
       id: 0, 
       content: (
         <div className="h-full overflow-y-auto p-4">
-          <PokemonHeader 
-            name={data.name}
-            rank={data.usage.rank}
-            usage_percent={data.usage.usage_percent}
-            types={data.types}
-            possible_abilities={data.possible_abilities}
-            base_stats={data.base_stats}
-            rating={data.rating}
-          />
+          <Sidebar />
         </div>
       ) 
     },
@@ -202,15 +168,9 @@ export default function Pokemon() {
               </div>
             </div>
             <div className="flex-1 min-h-0 flex flex-col relative overflow-hidden">
-               <div className={`absolute inset-0 transition-all duration-300 transform ${buildTab === 'items' ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0 pointer-events-none'}`}>
-                  <MobileBuildCard type="items" data={data.items} />
-               </div>
-               <div className={`absolute inset-0 transition-all duration-300 transform ${buildTab === 'abilities' ? 'translate-x-0 opacity-100' : buildTab === 'items' ? 'translate-x-full opacity-0 pointer-events-none' : '-translate-x-full opacity-0 pointer-events-none'}`}>
-                  <MobileBuildCard type="abilities" data={data.abilities} />
-               </div>
-               <div className={`absolute inset-0 transition-all duration-300 transform ${buildTab === 'tera' ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 pointer-events-none'}`}>
-                  <MobileBuildCard type="tera" data={data.tera_types} />
-               </div>
+               {buildTab === 'items' && <MobileBuildCard type="items" data={data.items} />}
+               {buildTab === 'abilities' && <MobileBuildCard type="abilities" data={data.abilities} />}
+               {buildTab === 'tera' && <MobileBuildCard type="tera" data={data.tera_types} />}
             </div>
           </div>
         )
@@ -251,23 +211,27 @@ export default function Pokemon() {
           </div>,
           sidebarTarget
         )}
-        <div 
-          className="flex-1 min-h-0 relative overflow-hidden"
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
-        >
-          {slides.map((slide) => (
-            <div 
-                key={slide.id}
-                className={`absolute inset-0 transition-transform duration-300 p-1 ${
-                    currentSlide === slide.id ? 'translate-x-0' : 
-                    currentSlide < slide.id ? 'translate-x-full' : '-translate-x-full'
-                }`}
-            >
+        <div className="flex-1 min-h-0 relative overflow-hidden">
+          <Swiper
+            onSwiper={(swiper) => {
+              swiperRef.current = swiper;
+              // Initialize swiper to current slide if needed
+              if (swiper.activeIndex !== currentSlide) {
+                swiper.slideTo(currentSlide, 0);
+              }
+            }}
+            onSlideChange={(swiper) => setCurrentSlide(swiper.activeIndex)}
+            initialSlide={currentSlide}
+            className="h-full"
+            spaceBetween={10}
+            touchStartPreventDefault={false}
+          >
+            {slides.map((slide) => (
+              <SwiperSlide key={slide.id} className="h-full overflow-y-auto px-2">
                 {slide.content}
-            </div>
-          ))}
+              </SwiperSlide>
+            ))}
+          </Swiper>
         </div>
       </div>
     );

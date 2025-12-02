@@ -1,11 +1,23 @@
 import { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { getFormatRatings } from '../utils/api';
+import { useRating } from '../contexts/RatingContext';
 import { Sidebar } from '../components/Sidebar';
 import { MobileProvider, useMobile } from '../contexts/MobileContext';
 
 const LayoutContent = () => {
   const { isMobile, currentSlide, setCurrentSlide, totalSlides, slideTitles } = useMobile();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isRatingOpen, setIsRatingOpen] = useState(false);
+  const { formatId } = useParams();
+  const { rating, setRating } = useRating();
+
+  const { data: availableRatings = [] } = useQuery<number[]>({
+    queryKey: ['ratings', formatId],
+    queryFn: () => getFormatRatings(formatId!),
+    enabled: !!formatId
+  });
 
   // Keyboard navigation
   useEffect(() => {
@@ -36,8 +48,55 @@ const LayoutContent = () => {
     <div className="min-h-screen flex flex-col text-gray-900 dark:text-white">
       {/* Mobile Header / Nav */}
       <div className="sticky top-0 z-50 bg-white/5 dark:bg-black/5 backdrop-blur-xl p-4 flex justify-between items-center">
-        <div className="font-bold text-lg tracking-wide">
-            {slideTitles[currentSlide] || 'Stats'}
+        <div className="font-bold text-lg tracking-wide flex items-center gap-3">
+            <span>{slideTitles[currentSlide] || 'Stats'}</span>
+            {currentSlide !== 0 && availableRatings.length > 0 && (
+              <div className="relative">
+                <button
+                  onClick={() => setIsRatingOpen(!isRatingOpen)}
+                  className="flex items-center gap-1 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors outline-none"
+                >
+                  <span>{rating}</span>
+                  <svg 
+                    className={`w-3 h-3 transition-transform duration-200 ${isRatingOpen ? 'rotate-180' : ''}`} 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {isRatingOpen && (
+                  <>
+                    <div 
+                        className="fixed inset-0 z-40" 
+                        onClick={() => setIsRatingOpen(false)}
+                    />
+                    <div className="absolute top-full left-0 mt-2 w-24 z-50 bg-white/90 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200/50 dark:border-white/10 rounded-xl shadow-xl overflow-hidden animate-fade-in">
+                      <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                        {availableRatings.map((r) => (
+                          <button
+                            key={r}
+                            onClick={() => {
+                              setRating(r);
+                              setIsRatingOpen(false);
+                            }}
+                            className={`w-full text-left px-4 py-2 text-sm font-medium transition-colors border-b border-gray-100/50 dark:border-white/5 last:border-0
+                              ${r === rating 
+                                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' 
+                                : 'text-gray-700 dark:text-gray-300 hover:bg-blue-500/5 hover:text-blue-600 dark:hover:text-blue-400'
+                              }`}
+                          >
+                            {r}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
         </div>
         
         <button 
@@ -91,15 +150,7 @@ const LayoutContent = () => {
 
       {/* Content Area */}
       <div className="flex-1 relative overflow-hidden">
-        {/* Sidebar (Slide 0) */}
-        <div className={`absolute inset-0 overflow-y-auto custom-scrollbar transition-transform duration-300 will-change-transform ${currentSlide === 0 ? 'translate-x-0' : '-translate-x-full'}`}>
-          <Sidebar />
-        </div>
-
-        {/* Main Content (Slides 1+) */}
-        <div className={`absolute inset-0 overflow-hidden p-4 transition-transform duration-300 will-change-transform flex flex-col ${currentSlide > 0 ? 'translate-x-0' : 'translate-x-full'}`}>
-          <Outlet />
-        </div>
+        <Outlet />
       </div>
       
       {/* Page Indicator */}
