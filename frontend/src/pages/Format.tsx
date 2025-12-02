@@ -5,6 +5,7 @@ import { PokemonSprite } from '../components/PokemonSprite';
 import { useQuery } from '@tanstack/react-query';
 import { getFormatData } from '../utils/api';
 import { useMobile } from '../contexts/MobileContext';
+import { Sidebar } from '../components/Sidebar';
 
 interface PokemonEntry {
   name: string;
@@ -23,7 +24,7 @@ export default function Format() {
   const [searchParams] = useSearchParams();
   const { rating } = useRating();
   const [searchTerm, setSearchTerm] = useState("");
-  const { setTotalSlides, setSlideTitles } = useMobile();
+  const { isMobile, setTotalSlides, setSlideTitles } = useMobile();
 
   useEffect(() => {
     setTotalSlides(2);
@@ -42,6 +43,10 @@ export default function Format() {
     queryFn: () => getFormatData(formatId!, numericRating),
     enabled: !!formatId
   });
+
+  if (isMobile) {
+    return <Sidebar />;
+  }
 
   if (loading) return <div className="p-8 text-center text-white text-xl font-light animate-pulse">Loading stats...</div>;
   if (!data) return <div className="p-8 text-center text-white text-xl">Format not found.</div>;
