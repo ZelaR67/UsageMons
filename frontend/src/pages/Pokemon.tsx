@@ -21,13 +21,41 @@ export default function Pokemon() {
   const [searchParams] = useSearchParams();
   const { rating } = useRating();
   const [sidebarTarget, setSidebarTarget] = useState<HTMLElement | null>(null);
-  const { isMobile, currentSlide, setTotalSlides, setSlideTitles } = useMobile();
+  const { isMobile, currentSlide, setCurrentSlide, setTotalSlides, setSlideTitles } = useMobile();
   const [buildTab, setBuildTab] = useState<'items' | 'abilities' | 'tera'>('items');
   
   const [underlineStyle, setUnderlineStyle] = useState({ left: 0, width: 0 });
   const itemsRef = useRef<HTMLButtonElement>(null);
   const abilitiesRef = useRef<HTMLButtonElement>(null);
   const teraRef = useRef<HTMLButtonElement>(null);
+
+  const touchStart = useRef<number | null>(null);
+  const touchEnd = useRef<number | null>(null);
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchEnd.current = null; 
+    touchStart.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    touchEnd.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart.current || !touchEnd.current) return;
+    
+    const distance = touchStart.current - touchEnd.current;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe && currentSlide < 5) {
+       setCurrentSlide(currentSlide + 1);
+    }
+    if (isRightSwipe && currentSlide > 0) {
+       setCurrentSlide(currentSlide - 1);
+    }
+  };
 
   const updateUnderline = (tab: 'items' | 'abilities' | 'tera') => {
     const activeRef = tab === 'items' ? itemsRef : tab === 'abilities' ? abilitiesRef : teraRef;
@@ -97,6 +125,22 @@ export default function Pokemon() {
   if (!data) return <div className="p-8 text-center text-white text-xl">Pokémon not found.</div>;
 
   const slides = [
+    { 
+      id: 0, 
+      content: (
+        <div className="h-full overflow-y-auto p-4">
+          <PokemonHeader 
+            name={data.name}
+            rank={data.usage.rank}
+            usage_percent={data.usage.usage_percent}
+            types={data.types}
+            possible_abilities={data.possible_abilities}
+            base_stats={data.base_stats}
+            rating={data.rating}
+          />
+        </div>
+      ) 
+    },
     { id: 1, content: <MovesCard moves={data.moves} /> },
     { id: 2, content: (
           <div className="flex flex-col h-full glass-card p-4">
@@ -196,7 +240,12 @@ export default function Pokemon() {
           </div>,
           sidebarTarget
         )}
-        <div className="flex-1 min-h-0 relative overflow-hidden">
+        <div 
+          className="flex-1 min-h-0 relative overflow-hidden"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        >
           {slides.map((slide) => (
             <div 
                 key={slide.id}
