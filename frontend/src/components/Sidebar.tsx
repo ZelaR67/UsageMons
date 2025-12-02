@@ -1,5 +1,10 @@
 import { useEffect, useState, useMemo, memo } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
+import * as ReactWindow from 'react-window';
+// @ts-ignore
+console.log('ReactWindow debug:', ReactWindow);
+const List = ReactWindow.FixedSizeList || ReactWindow.default?.FixedSizeList || ReactWindow.List || ReactWindow.default?.List || ReactWindow.default;
+import AutoSizer from 'react-virtualized-auto-sizer';
 import { Dropdown } from './Dropdown';
 import { PokemonSprite } from './PokemonSprite';
 import { useRating } from '../contexts/RatingContext';
@@ -45,11 +50,36 @@ const RatingSelector = memo(({ ratings, currentRating, onRatingChange }: {
   );
 });
 
+const Row = ({ index, style, data }: { index: number, style: React.CSSProperties, data: any }) => {
+  const { items, originalList, navigate, formatId } = data;
+  const p = items[index];
+  const rank = originalList.indexOf(p) + 1;
+  
+  return (
+    <div style={style} className="px-1">
+       <button
+         onClick={() => navigate(`/format/${formatId}/pokemon/${p.name.toLowerCase().replace(/ /g, '-').replace(/['.:]/g, '')}`)}
+         className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors text-left group h-full"
+       >
+         <span className="font-mono text-gray-400 dark:text-gray-500 font-bold w-6 text-xs">#{rank}</span>
+         <div className="w-8 h-8 flex items-center justify-center shrink-0">
+            <PokemonSprite name={p.name} className="max-w-full max-h-full group-hover:scale-110 transition-transform" />
+         </div>
+         <div className="flex-1 min-w-0">
+           <div className="font-bold text-sm text-gray-700 dark:text-gray-200 truncate">{p.name}</div>
+         </div>
+         <div className="font-mono text-xs font-medium text-blue-600 dark:text-blue-400">{p.usage_percent}%</div>
+       </button>
+    </div>
+  );
+};
+
 export const Sidebar = () => {
   const { formatId, pokemonName } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [pokemonList, setPokemonList] = useState<{name: string, usage_percent: number}[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const { rating, setRating } = useRating();
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -140,14 +170,20 @@ export const Sidebar = () => {
     )
   })), [pokemonList]);
 
+  const filteredPokemonList = useMemo(() => {
+    if (!searchTerm) return pokemonList;
+    return pokemonList.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  }, [pokemonList, searchTerm]);
+
   const { isMobile } = useMobile();
 
   const desktopClasses = "w-96 h-screen fixed left-0 top-0 border-r border-gray-200 dark:border-gray-800";
-  const mobileClasses = "w-full min-h-full relative";
+  const mobileClasses = "w-full h-full relative flex flex-col overflow-hidden";
 
   return (
-    <aside className={`${isMobile ? mobileClasses : desktopClasses} bg-white/80 dark:bg-gray-900/80 backdrop-blur-md overflow-y-auto p-6 flex flex-col gap-6 z-40 custom-scrollbar scrollbar-stable`}>
-      <div className="space-y-6">
+    <aside className={`${isMobile ? mobileClasses : desktopClasses} bg-white/80 dark:bg-gray-900/80 backdrop-blur-md z-40`}>
+      <div className={`flex flex-col gap-6 p-6 h-full ${!isMobile ? 'overflow-y-auto custom-scrollbar scrollbar-stable' : 'overflow-hidden'}`}>
+        <div className="space-y-6 shrink-0">
         <div className="flex items-center justify-between">
           <Link to={formatId ? `/format/${formatId}` : '/'} className="hover:opacity-80 transition-opacity">
             <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-linear-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400">
@@ -163,47 +199,95 @@ export const Sidebar = () => {
           </button>
         </div>
 
-        <div>
-          <div className="flex justify-between items-center mb-2">
-            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Format
-            </label>
-            {pokemonName && (
-              <Link 
-                to={`/format/${formatId}`}
-                className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline uppercase tracking-wider"
-              >
-                Back
-              </Link>
-            )}
-          </div>
-          <Dropdown
-            value={formatId || ''}
-            onChange={(val) => {
-              setRating(null);
-              navigate(`/format/${val}`);
-            }}
-            options={formatOptions}
-            placeholder="Select Format"
-            searchable
-          />
-        </div>
-
-        {rating !== null && availableRatings.length > 0 && (
-          <div className="px-1 -mt-2 space-y-2">
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-500 dark:text-gray-400">Glicko Threshold</span>
+        {isMobile ? (
+          <div className="flex gap-3 items-end">
+            <div className="flex-1 min-w-0">
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Format
+                </label>
+                {pokemonName && (
+                  <Link 
+                    to={`/format/${formatId}`}
+                    className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline uppercase tracking-wider"
+                  >
+                    Back
+                  </Link>
+                )}
+              </div>
+              <Dropdown
+                value={formatId || ''}
+                onChange={(val) => {
+                  setRating(null);
+                  navigate(`/format/${val}`);
+                }}
+                options={formatOptions}
+                placeholder="Format"
+                searchable
+              />
             </div>
             
-            <RatingSelector 
-              ratings={availableRatings}
-              currentRating={rating}
-              onRatingChange={handleRatingChange}
-            />
+            {rating !== null && availableRatings.length > 0 && (
+              <div className="w-28 shrink-0">
+                <div className="mb-2">
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Rating
+                  </label>
+                </div>
+                <Dropdown
+                  value={rating.toString()}
+                  onChange={(val) => handleRatingChange(parseInt(val))}
+                  options={availableRatings.map(r => ({ value: r.toString(), label: r.toString() }))}
+                  placeholder="Elo"
+                />
+              </div>
+            )}
           </div>
+        ) : (
+          <>
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Format
+                </label>
+                {pokemonName && (
+                  <Link 
+                    to={`/format/${formatId}`}
+                    className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline uppercase tracking-wider"
+                  >
+                    Back
+                  </Link>
+                )}
+              </div>
+              <Dropdown
+                value={formatId || ''}
+                onChange={(val) => {
+                  setRating(null);
+                  navigate(`/format/${val}`);
+                }}
+                options={formatOptions}
+                placeholder="Select Format"
+                searchable
+              />
+            </div>
+
+            {rating !== null && availableRatings.length > 0 && (
+              <div className="px-1 -mt-2 space-y-2">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-500 dark:text-gray-400">Glicko Threshold</span>
+                </div>
+                
+                <RatingSelector 
+                  ratings={availableRatings}
+                  currentRating={rating}
+                  onRatingChange={handleRatingChange}
+                />
+              </div>
+            )}
+          </>
         )}
 
-        {formatId && (
+        {formatId && (!isMobile || pokemonName) && (
           <Dropdown
             label="Pokemon"
             value={pokemonName || ''}
@@ -213,37 +297,48 @@ export const Sidebar = () => {
             searchable
           />
         )}
+        </div>
 
         {isMobile && !pokemonName && formatId && pokemonList.length > 0 && (
-          <div className="mt-2">
-             <div className="flex justify-between items-center mb-2 px-1">
-               <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Leaderboard</h3>
-               <span className="text-xs text-gray-400 dark:text-gray-500">{pokemonList.length} Pokemon</span>
-             </div>
-             <ul className="space-y-1">
-               {pokemonList.map((p, index) => (
-                 <li key={p.name}>
-                   <button
-                     onClick={() => navigate(`/format/${formatId}/pokemon/${p.name.toLowerCase().replace(/ /g, '-').replace(/['.:]/g, '')}`)}
-                     className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors text-left group"
-                   >
-                     <span className="font-mono text-gray-400 dark:text-gray-500 font-bold w-6 text-xs">#{index + 1}</span>
-                     <div className="w-8 h-8 flex items-center justify-center shrink-0">
-                        <PokemonSprite name={p.name} className="max-w-full max-h-full group-hover:scale-110 transition-transform" />
-                     </div>
-                     <div className="flex-1 min-w-0">
-                       <div className="font-bold text-sm text-gray-700 dark:text-gray-200 truncate">{p.name}</div>
-                     </div>
-                     <div className="font-mono text-xs font-medium text-blue-600 dark:text-blue-400">{p.usage_percent}%</div>
-                   </button>
-                 </li>
-               ))}
-             </ul>
-          </div>
+          <>
+            <div className="mt-2 px-1 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm py-2 z-10 shrink-0">
+               <div className="flex justify-between items-center mb-2">
+                 <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Leaderboard</h3>
+                 <span className="text-xs text-gray-400 dark:text-gray-500">{filteredPokemonList.length} Pokemon</span>
+               </div>
+               <input
+                 type="text"
+                 placeholder="Search Pokemon..."
+                 value={searchTerm}
+                 onChange={(e) => setSearchTerm(e.target.value)}
+                 className="w-full p-2 rounded-lg bg-gray-100 dark:bg-white/5 border border-transparent focus:border-blue-500/50 focus:bg-white dark:focus:bg-black/40 outline-none text-sm transition-all"
+               />
+            </div>
+            <div className="flex-1 min-h-0">
+              <AutoSizer>
+                {({ height, width }) => (
+                  <List
+                    height={height}
+                    width={width}
+                    itemCount={filteredPokemonList.length}
+                    itemSize={60}
+                    itemData={{
+                      items: filteredPokemonList,
+                      originalList: pokemonList,
+                      navigate,
+                      formatId
+                    }}
+                  >
+                    {Row}
+                  </List>
+                )}
+              </AutoSizer>
+            </div>
+          </>
         )}
-      </div>
 
-      <div id="sidebar-dex-info" className="flex-1 flex flex-col gap-4"></div>
+        <div id="sidebar-dex-info" className={`${pokemonName ? 'flex-1 flex flex-col gap-4 overflow-y-auto custom-scrollbar' : 'hidden'}`}></div>
+      </div>
     </aside>
   );
 };

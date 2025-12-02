@@ -27,8 +27,8 @@ export default function Format() {
   const { isMobile, setTotalSlides, setSlideTitles } = useMobile();
 
   useEffect(() => {
-    setTotalSlides(2);
-    setSlideTitles(['Overview', 'Format Stats']);
+    setTotalSlides(1);
+    setSlideTitles(['Leaderboard']);
   }, [setTotalSlides, setSlideTitles]);
 
   useEffect(() => {
