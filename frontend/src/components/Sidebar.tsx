@@ -291,7 +291,7 @@ export const Sidebar = () => {
             value={pokemonName || ''}
             onChange={(val) => navigate(`/format/${formatId}/pokemon/${val}`)}
             options={pokemonOptions}
-            placeholder="Select Pokemon"
+            placeholder={pokemonName ? pokemonName.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ') : "Select Pokemon"}
             searchable
           />
         )}

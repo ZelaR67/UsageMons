@@ -100,7 +100,10 @@ export const Dropdown: React.FC<DropdownProps> = ({
       ) : (
         <button
           type="button"
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsOpen(!isOpen);
+          }}
           className="w-full p-3 rounded-xl bg-white/50 dark:bg-black/40 border border-gray-200/50 dark:border-white/10 text-left text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all backdrop-blur-sm hover:bg-white/60 dark:hover:bg-black/50 font-medium flex justify-between items-center group"
         >
           <span className={`truncate ${!selectedOption ? 'text-gray-500 dark:text-gray-400' : ''}`}>
@@ -111,7 +114,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
       )}
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-2 bg-white/90 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200/50 dark:border-white/10 rounded-xl shadow-xl overflow-hidden animate-fade-in">
+        <div className="absolute z-50 w-full mt-2 bg-white/90 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200/50 dark:border-white/10 rounded-xl shadow-xl overflow-hidden animate-fade-in swiper-no-swiping">
           <div className="max-h-60 overflow-y-auto custom-scrollbar">
             {filteredOptions.length > 0 ? (
               filteredOptions.map((option) => (
