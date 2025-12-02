@@ -16,7 +16,7 @@ export const getIndexDb = async () => {
         from: "inline",
         config: {
           serverMode: "full",
-          url: baseUrl + "db.sqlite3",
+          url: baseUrl + "db.bin",
           requestChunkSize: 4096,
         },
       },
@@ -39,7 +39,7 @@ export const getFormatDb = async (formatId: string) => {
         from: "inline",
         config: {
           serverMode: "full",
-          url: baseUrl + `dbs/${formatId}.sqlite3`,
+          url: baseUrl + `dbs/${formatId}.bin`,
           requestChunkSize: 4096,
         },
       },
