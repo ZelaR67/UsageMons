@@ -17,7 +17,7 @@ import { TeraTypesCard } from '../components/TeraTypesCard';
 import { MobileBuildCard } from '../components/MobileBuildCard';
 import type { PokemonStats } from '../types';
 import { useRating } from '../contexts/RatingContext';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { getPokemonData, getFormatData } from '../utils/api';
 import { useMobile } from '../contexts/MobileContext';
 
@@ -105,7 +105,8 @@ export default function Pokemon() {
   const { data, isLoading: loading, isFetching: isUpdating } = useQuery<PokemonStats>({
     queryKey: ['pokemon', formatId, pokemonName, numericRating],
     queryFn: () => getPokemonData(formatId!, pokemonName!, numericRating),
-    enabled: !!formatId && !!pokemonName
+    enabled: !!formatId && !!pokemonName,
+    placeholderData: keepPreviousData
   });
 
   const { data: formatData } = useQuery({
