@@ -45,7 +45,7 @@ const LayoutContent = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col text-gray-900 dark:text-white">
+    <div className="h-[100dvh] overflow-hidden flex flex-col text-gray-900 dark:text-white">
       {/* Mobile Header / Nav */}
       <div className="sticky top-0 z-50 bg-white/5 dark:bg-black/5 backdrop-blur-xl p-4 flex justify-between items-center">
         <div className="font-bold text-lg tracking-wide flex items-center gap-3">
