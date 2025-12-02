@@ -9,7 +9,7 @@ from process_data import collect_pokemon_stats, create_lookup_map
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PUBLIC_DIR = os.path.join(BASE_DIR, 'frontend', 'public')
 DB_DIR = os.path.join(PUBLIC_DIR, 'dbs')
-INDEX_DB_PATH = os.path.join(PUBLIC_DIR, 'db.sqlite3')
+INDEX_DB_PATH = os.path.join(PUBLIC_DIR, 'db.png')
 DATA_DIR = os.path.join(BASE_DIR, 'data', '2025-10', 'data')
 META_DIR = os.path.join(BASE_DIR, 'data', 'meta')
 
@@ -215,7 +215,7 @@ def process_formats(index_conn, pokedex, moves, items, abilities):
         print(f"Processing format: {format_id}")
         
         # Create/Connect to format DB
-        format_db_path = os.path.join(DB_DIR, f"{format_id}.sqlite3")
+        format_db_path = os.path.join(DB_DIR, f"{format_id}.png")
         format_conn = sqlite3.connect(format_db_path)
         init_format_db(format_conn)
         format_cursor = format_conn.cursor()
