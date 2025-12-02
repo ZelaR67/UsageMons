@@ -80,11 +80,24 @@ export default function Pokemon() {
   }, [currentSlide]);
 
   useEffect(() => {
-    const element = document.getElementById('sidebar-dex-info');
-    if (element) {
-      setSidebarTarget(element);
-    }
-  }, []);
+    const updateSidebarTarget = () => {
+      const element = document.getElementById('sidebar-dex-info');
+      if (element) {
+        setSidebarTarget(element);
+      }
+    };
+
+    updateSidebarTarget();
+    
+    // Retry a few times to ensure we catch the element after Swiper/Layout renders
+    const interval = setInterval(updateSidebarTarget, 100);
+    const timeout = setTimeout(() => clearInterval(interval), 2000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [isMobile]); // Re-run when switching view modes to capture the new element instance
 
   const ratingParam = rating !== null ? rating : searchParams.get('rating');
   const numericRating = typeof ratingParam === 'string' ? parseInt(ratingParam) : ratingParam;
