@@ -2,6 +2,7 @@ import React from 'react';
 import type { Spread } from '../types';
 import { Tooltip } from './Tooltip';
 import { calculateStats } from '../utils/stats';
+import { useMobile } from '../contexts/MobileContext';
 
 interface SpreadsCardProps {
   spreads: Spread[];
@@ -9,6 +10,7 @@ interface SpreadsCardProps {
 }
 
 export const SpreadsCard: React.FC<SpreadsCardProps> = ({ spreads, baseStats }) => {
+  const { isMobile } = useMobile();
   if (!spreads || spreads.length === 0) return null;
 
   const parseSpread = (spreadStr: string) => {
@@ -22,9 +24,9 @@ export const SpreadsCard: React.FC<SpreadsCardProps> = ({ spreads, baseStats }) 
   };
 
   return (
-    <div className="glass-card p-4">
+    <div className={`glass-card p-4 ${isMobile ? 'h-full flex flex-col' : ''}`}>
       <h2 className="text-lg font-bold mb-3 border-b border-gray-200/50 dark:border-white/10 pb-2 text-gray-800 dark:text-gray-100">EV Spreads</h2>
-      <div className="space-y-1">
+      <div className={`space-y-1 ${isMobile ? 'flex-1 overflow-y-auto custom-scrollbar' : ''}`}>
         {spreads.map((spread, idx) => {
           const parsed = parseSpread(spread.spread);
           let tooltipContent: React.ReactNode = "Cannot calculate stats";
@@ -49,8 +51,8 @@ export const SpreadsCard: React.FC<SpreadsCardProps> = ({ spreads, baseStats }) 
           return (
             <Tooltip key={idx} content={tooltipContent} className="block w-full">
               <div className="flex justify-between text-sm hover:bg-white/20 dark:hover:bg-white/5 p-2 rounded transition-colors cursor-help">
-                <span className="font-mono text-gray-600 dark:text-gray-300 bg-white/40 dark:bg-white/10 px-2 py-0.5 rounded text-xs">{spread.spread}</span>
-                <span className="font-bold text-gray-600 dark:text-gray-400">{spread.usage_percent}%</span>
+                <span className="font-mono text-gray-600 dark:text-gray-300 bg-white/40 dark:bg-white/10 px-2 py-0.5 rounded text-xs truncate max-w-[70%]">{spread.spread}</span>
+                <span className="font-bold text-gray-600 dark:text-gray-400 flex-shrink-0">{spread.usage_percent}%</span>
               </div>
             </Tooltip>
           );

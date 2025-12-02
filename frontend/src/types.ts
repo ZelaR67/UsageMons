@@ -18,6 +18,8 @@ export interface Teammate {
 export interface Counter {
   name: string;
   score: number;
+  count: number;
+  usage_percent: number;
 }
 
 export interface Spread {

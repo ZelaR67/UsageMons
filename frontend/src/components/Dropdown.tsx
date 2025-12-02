@@ -86,7 +86,16 @@ export const Dropdown: React.FC<DropdownProps> = ({
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-500 dark:text-blue-400 text-xs pointer-events-none">▲</span>
+          <button 
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsOpen(false);
+            }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-500 dark:text-blue-400 text-xs cursor-pointer hover:text-blue-600 dark:hover:text-blue-300 p-1"
+          >
+            ▲
+          </button>
         </div>
       ) : (
         <button

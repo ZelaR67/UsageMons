@@ -4,6 +4,7 @@ import { useRating } from '../contexts/RatingContext';
 import { PokemonSprite } from '../components/PokemonSprite';
 import { useQuery } from '@tanstack/react-query';
 import { getFormatData } from '../utils/api';
+import { useMobile } from '../contexts/MobileContext';
 
 interface PokemonEntry {
   name: string;
@@ -22,16 +23,23 @@ export default function Format() {
   const [searchParams] = useSearchParams();
   const { rating } = useRating();
   const [searchTerm, setSearchTerm] = useState("");
+  const { setTotalSlides, setSlideTitles } = useMobile();
+
+  useEffect(() => {
+    setTotalSlides(2);
+    setSlideTitles(['Overview', 'Format Stats']);
+  }, [setTotalSlides, setSlideTitles]);
 
   useEffect(() => {
     setSearchTerm("");
   }, [formatId]);
 
   const ratingParam = rating !== null ? rating : searchParams.get('rating');
+  const numericRating = typeof ratingParam === 'string' ? parseInt(ratingParam) : ratingParam;
 
   const { data, isLoading: loading } = useQuery<FormatData>({
-    queryKey: ['format', formatId, ratingParam],
-    queryFn: () => getFormatData(formatId!, typeof ratingParam === 'string' ? parseInt(ratingParam) : ratingParam),
+    queryKey: ['pokemonList', formatId, numericRating],
+    queryFn: () => getFormatData(formatId!, numericRating),
     enabled: !!formatId
   });
 

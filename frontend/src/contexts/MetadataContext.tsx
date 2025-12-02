@@ -14,6 +14,7 @@ interface ItemMeta {
   name: string;
   desc: string;
   shortDesc?: string;
+  spritenum?: number;
 }
 
 interface AbilityMeta {
@@ -67,7 +68,8 @@ export const MetadataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const itemsMap = itemsData.reduce((acc: any, item: any) => {
             acc[item.id] = {
                 name: item.name,
-                desc: item.description
+                desc: item.description,
+                spritenum: item.spritenum
             };
             return acc;
         }, {});

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { PokemonHeader } from '../components/PokemonHeader';
@@ -6,35 +6,212 @@ import { MovesCard } from '../components/MovesCard';
 import { ItemsCard } from '../components/ItemsCard';
 import { AbilitiesCard } from '../components/AbilitiesCard';
 import { TeammatesCard } from '../components/TeammatesCard';
-import { CountersCard } from '../components/CountersCard';
-import { DominatesCard } from '../components/DominatesCard';
+import { MatchupsCard } from '../components/MatchupsCard';
 import { SpreadsCard } from '../components/SpreadsCard';
 import { TeraTypesCard } from '../components/TeraTypesCard';
+import { MobileBuildCard } from '../components/MobileBuildCard';
 import type { PokemonStats } from '../types';
 import { useRating } from '../contexts/RatingContext';
 import { useQuery } from '@tanstack/react-query';
-import { getPokemonData } from '../utils/api';
+import { getPokemonData, getFormatData } from '../utils/api';
+import { useMobile } from '../contexts/MobileContext';
 
 export default function Pokemon() {
   const { formatId, pokemonName } = useParams();
   const [searchParams] = useSearchParams();
   const { rating } = useRating();
   const [sidebarTarget, setSidebarTarget] = useState<HTMLElement | null>(null);
+  const { isMobile, currentSlide, setTotalSlides, setSlideTitles } = useMobile();
+  const [buildTab, setBuildTab] = useState<'items' | 'abilities' | 'tera'>('items');
+  
+  const [underlineStyle, setUnderlineStyle] = useState({ left: 0, width: 0 });
+  const itemsRef = useRef<HTMLButtonElement>(null);
+  const abilitiesRef = useRef<HTMLButtonElement>(null);
+  const teraRef = useRef<HTMLButtonElement>(null);
+
+  const updateUnderline = (tab: 'items' | 'abilities' | 'tera') => {
+    const activeRef = tab === 'items' ? itemsRef : tab === 'abilities' ? abilitiesRef : teraRef;
+    if (activeRef.current) {
+      setUnderlineStyle({
+        left: activeRef.current.offsetLeft,
+        width: activeRef.current.offsetWidth
+      });
+    }
+  };
+
+  const handleTabChange = (tab: 'items' | 'abilities' | 'tera') => {
+    setBuildTab(tab);
+    updateUnderline(tab);
+  };
 
   useEffect(() => {
-    setSidebarTarget(document.getElementById('sidebar-dex-info'));
+    const update = () => {
+      const activeRef = buildTab === 'items' ? itemsRef : buildTab === 'abilities' ? abilitiesRef : teraRef;
+      if (activeRef.current) {
+        setUnderlineStyle({
+          left: activeRef.current.offsetLeft,
+          width: activeRef.current.offsetWidth
+        });
+      }
+    };
+    
+    update();
+    // Recalculate after a short delay to ensure layout is stable
+    const timer = setTimeout(update, 100);
+    return () => clearTimeout(timer);
+  }, [buildTab, isMobile, currentSlide]); // Recalculate on tab change, mobile view toggle, or slide change
+
+  useEffect(() => {
+    setTotalSlides(6);
+    setSlideTitles(['Overview', 'Moves', 'Build', 'Spreads', 'Teammates', 'Matchups']);
+  }, [setTotalSlides, setSlideTitles]);
+
+  useEffect(() => {
+    const element = document.getElementById('sidebar-dex-info');
+    if (element) {
+      setSidebarTarget(element);
+    }
   }, []);
 
   const ratingParam = rating !== null ? rating : searchParams.get('rating');
+  const numericRating = typeof ratingParam === 'string' ? parseInt(ratingParam) : ratingParam;
 
   const { data, isLoading: loading, isFetching: isUpdating } = useQuery<PokemonStats>({
-    queryKey: ['pokemon', formatId, pokemonName, ratingParam],
-    queryFn: () => getPokemonData(formatId!, pokemonName!, typeof ratingParam === 'string' ? parseInt(ratingParam) : ratingParam),
+    queryKey: ['pokemon', formatId, pokemonName, numericRating],
+    queryFn: () => getPokemonData(formatId!, pokemonName!, numericRating),
     enabled: !!formatId && !!pokemonName
   });
 
+  const { data: formatData } = useQuery({
+    queryKey: ['pokemonList', formatId, numericRating],
+    queryFn: () => getFormatData(formatId!, numericRating),
+    enabled: !!formatId
+  });
+
+  const globalUsageMap = formatData?.pokemon.reduce((acc: Record<string, number>, p: any) => {
+    acc[p.name] = p.usage_percent;
+    return acc;
+  }, {}) || {};
+
   if (loading && !data) return <div className="p-8 text-center text-white text-xl font-light animate-pulse">Loading data...</div>;
   if (!data) return <div className="p-8 text-center text-white text-xl">Pokémon not found.</div>;
+
+  const slides = [
+    { id: 1, content: <MovesCard moves={data.moves} /> },
+    { id: 2, content: (
+          <div className="flex flex-col h-full glass-card p-4">
+            <div className="mb-4 border-b pb-4 border-gray-200/50 dark:border-white/10 shrink-0">
+              <div className="flex justify-around w-full relative">
+                <button
+                  ref={itemsRef}
+                  onClick={() => handleTabChange('items')}
+                  className={`pb-2 text-sm font-bold transition-colors duration-200 ${
+                    buildTab === 'items' 
+                      ? 'text-blue-600 dark:text-blue-400' 
+                      : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                  }`}
+                >
+                  Items
+                </button>
+                <button
+                  ref={abilitiesRef}
+                  onClick={() => handleTabChange('abilities')}
+                  className={`pb-2 text-sm font-bold transition-colors duration-200 ${
+                    buildTab === 'abilities' 
+                      ? 'text-blue-600 dark:text-blue-400' 
+                      : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                  }`}
+                >
+                  Abilities
+                </button>
+                <button
+                  ref={teraRef}
+                  onClick={() => handleTabChange('tera')}
+                  className={`pb-2 text-sm font-bold transition-colors duration-200 ${
+                    buildTab === 'tera' 
+                      ? 'text-blue-600 dark:text-blue-400' 
+                      : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                  }`}
+                >
+                  Tera Types
+                </button>
+                
+                {/* Animated Underline */}
+                <div 
+                  className="absolute bottom-0 h-0.5 bg-blue-500 dark:bg-blue-400 rounded-full transition-all duration-300 ease-out"
+                  style={{
+                    left: underlineStyle.left,
+                    width: underlineStyle.width
+                  }}
+                />
+              </div>
+            </div>
+            <div className="flex-1 min-h-0 flex flex-col relative overflow-hidden">
+               <div className={`absolute inset-0 transition-all duration-300 transform ${buildTab === 'items' ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0 pointer-events-none'}`}>
+                  <MobileBuildCard type="items" data={data.items} />
+               </div>
+               <div className={`absolute inset-0 transition-all duration-300 transform ${buildTab === 'abilities' ? 'translate-x-0 opacity-100' : buildTab === 'items' ? 'translate-x-full opacity-0 pointer-events-none' : '-translate-x-full opacity-0 pointer-events-none'}`}>
+                  <MobileBuildCard type="abilities" data={data.abilities} />
+               </div>
+               <div className={`absolute inset-0 transition-all duration-300 transform ${buildTab === 'tera' ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 pointer-events-none'}`}>
+                  <MobileBuildCard type="tera" data={data.tera_types} />
+               </div>
+            </div>
+          </div>
+        )
+    },
+    { id: 3, content: <SpreadsCard spreads={data.spreads} baseStats={data.base_stats} /> },
+    { id: 4, content: (
+          <TeammatesCard 
+            teammates={data.teammates} 
+            formatId={formatId || ''} 
+            globalUsageMap={globalUsageMap}
+          />
+        )
+    },
+    { id: 5, content: (
+          <MatchupsCard 
+            dominates={data.dominates} 
+            counters={data.counters} 
+            formatId={formatId || ''} 
+          />
+        )
+    }
+  ];
+
+  if (isMobile) {
+    return (
+      <div className={`h-full flex flex-col transition-opacity duration-200 ${isUpdating ? 'opacity-50' : 'opacity-100'}`}>
+        {sidebarTarget && createPortal(
+          <div className={`animate-fade-in transition-opacity duration-200 ${isUpdating ? 'opacity-50' : 'opacity-100'}`}>
+            <PokemonHeader 
+              name={data.name}
+              rank={data.usage.rank}
+              usage_percent={data.usage.usage_percent}
+              types={data.types}
+              possible_abilities={data.possible_abilities}
+              base_stats={data.base_stats}
+              rating={data.rating}
+            />
+          </div>,
+          sidebarTarget
+        )}
+        <div className="flex-1 min-h-0 relative overflow-hidden">
+          {slides.map((slide) => (
+            <div 
+                key={slide.id}
+                className={`absolute inset-0 transition-transform duration-300 p-1 ${
+                    currentSlide === slide.id ? 'translate-x-0' : 
+                    currentSlide < slide.id ? 'translate-x-full' : '-translate-x-full'
+                }`}
+            >
+                {slide.content}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`max-w-7xl mx-auto transition-opacity duration-200 ${isUpdating ? 'opacity-50' : 'opacity-100'}`}>
@@ -68,9 +245,16 @@ export default function Pokemon() {
         </div>
 
         <div className="space-y-4">
-          <TeammatesCard teammates={data.teammates} formatId={formatId || ''} />
-          <DominatesCard dominates={data.dominates} formatId={formatId || ''} />
-          <CountersCard counters={data.counters} formatId={formatId || ''} />
+          <TeammatesCard 
+            teammates={data.teammates} 
+            formatId={formatId || ''} 
+            globalUsageMap={globalUsageMap}
+          />
+          <MatchupsCard 
+            dominates={data.dominates} 
+            counters={data.counters} 
+            formatId={formatId || ''} 
+          />
         </div>
       </div>
     </div>

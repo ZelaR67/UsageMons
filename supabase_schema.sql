@@ -40,6 +40,7 @@ create table if not exists items (
   id text primary key,
   name text,
   description text,
+  spritenum int,
   created_at timestamptz default now()
 );
 

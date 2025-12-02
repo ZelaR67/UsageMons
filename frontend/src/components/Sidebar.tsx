@@ -1,9 +1,12 @@
 import { useEffect, useState, useMemo, memo } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Dropdown } from './Dropdown';
+import { PokemonSprite } from './PokemonSprite';
 import { useRating } from '../contexts/RatingContext';
 import { useQuery } from '@tanstack/react-query';
 import { getFormats, getFormatRatings, getFormatData } from '../utils/api';
+import { FORMAT_NAMES } from '../utils/formatNames';
+import { useMobile } from '../contexts/MobileContext';
 
 const RatingSelector = memo(({ ratings, currentRating, onRatingChange }: { 
   ratings: number[], 
@@ -81,6 +84,16 @@ export const Sidebar = () => {
     enabled: !!formatId
   });
 
+  // Default to max rating when available ratings change
+  useEffect(() => {
+    if (availableRatings.length > 0) {
+      const maxRating = Math.max(...availableRatings);
+      if (rating === null || !availableRatings.includes(rating)) {
+        setRating(maxRating);
+      }
+    }
+  }, [availableRatings, rating, setRating]);
+
   const { data: pokemonData } = useQuery<{pokemon: {name: string, usage_percent: number}[], rating: number | null}>({
     queryKey: ['pokemonList', formatId, rating],
     queryFn: () => getFormatData(formatId!, rating!),
@@ -90,11 +103,8 @@ export const Sidebar = () => {
   useEffect(() => {
     if (pokemonData) {
       setPokemonList(pokemonData.pokemon);
-      if (rating === null) {
-         setRating(pokemonData.rating);
-      }
     }
-  }, [pokemonData, rating, setRating]);
+  }, [pokemonData]);
 
   useEffect(() => {
     const ratingParam = searchParams.get('rating');
@@ -114,7 +124,10 @@ export const Sidebar = () => {
     setRating(newRating);
   };
 
-  const formatOptions = useMemo(() => formats.map(f => ({ value: f.id, label: f.name })), [formats]);
+  const formatOptions = useMemo(() => formats.map(f => ({ 
+    value: f.id, 
+    label: FORMAT_NAMES[f.id] || f.name || f.id 
+  })), [formats]);
 
   const pokemonOptions = useMemo(() => pokemonList.map(p => ({
     value: p.name.toLowerCase().replace(/ /g, '-').replace(/['.:]/g, ''),
@@ -127,8 +140,13 @@ export const Sidebar = () => {
     )
   })), [pokemonList]);
 
+  const { isMobile } = useMobile();
+
+  const desktopClasses = "w-96 h-screen fixed left-0 top-0 border-r border-gray-200 dark:border-gray-800";
+  const mobileClasses = "w-full min-h-full relative";
+
   return (
-    <aside className="w-96 h-screen fixed left-0 top-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-r border-gray-200 dark:border-gray-800 overflow-y-auto p-6 flex flex-col gap-6 z-40 custom-scrollbar scrollbar-stable">
+    <aside className={`${isMobile ? mobileClasses : desktopClasses} bg-white/80 dark:bg-gray-900/80 backdrop-blur-md overflow-y-auto p-6 flex flex-col gap-6 z-40 custom-scrollbar scrollbar-stable`}>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <Link to={formatId ? `/format/${formatId}` : '/'} className="hover:opacity-80 transition-opacity">
@@ -194,6 +212,34 @@ export const Sidebar = () => {
             placeholder="Select Pokemon"
             searchable
           />
+        )}
+
+        {isMobile && !pokemonName && formatId && pokemonList.length > 0 && (
+          <div className="mt-2">
+             <div className="flex justify-between items-center mb-2 px-1">
+               <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Leaderboard</h3>
+               <span className="text-xs text-gray-400 dark:text-gray-500">{pokemonList.length} Pokemon</span>
+             </div>
+             <ul className="space-y-1">
+               {pokemonList.map((p, index) => (
+                 <li key={p.name}>
+                   <button
+                     onClick={() => navigate(`/format/${formatId}/pokemon/${p.name.toLowerCase().replace(/ /g, '-').replace(/['.:]/g, '')}`)}
+                     className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors text-left group"
+                   >
+                     <span className="font-mono text-gray-400 dark:text-gray-500 font-bold w-6 text-xs">#{index + 1}</span>
+                     <div className="w-8 h-8 flex items-center justify-center shrink-0">
+                        <PokemonSprite name={p.name} className="max-w-full max-h-full group-hover:scale-110 transition-transform" />
+                     </div>
+                     <div className="flex-1 min-w-0">
+                       <div className="font-bold text-sm text-gray-700 dark:text-gray-200 truncate">{p.name}</div>
+                     </div>
+                     <div className="font-mono text-xs font-medium text-blue-600 dark:text-blue-400">{p.usage_percent}%</div>
+                   </button>
+                 </li>
+               ))}
+             </ul>
+          </div>
         )}
       </div>
 

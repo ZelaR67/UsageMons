@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Home from './pages/Home';
 import Format from './pages/Format';
 import Pokemon from './pages/Pokemon';
 import { SidebarLayout } from './layouts/SidebarLayout';
@@ -13,7 +14,7 @@ function App() {
           <div className="fixed-bg" />
           <div className="min-h-screen text-gray-800 flex flex-col font-sans relative">
             <Routes>
-              <Route path="/" element={<Navigate to="/format/gen9ou" replace />} />
+              <Route path="/" element={<Home />} />
               <Route element={<SidebarLayout />}>
                 <Route path="/format/:formatId" element={<Format />} />
                 <Route path="/format/:formatId/pokemon/:pokemonName" element={<Pokemon />} />
