@@ -29,32 +29,43 @@ export default function Pokemon() {
   const abilitiesRef = useRef<HTMLButtonElement>(null);
   const teraRef = useRef<HTMLButtonElement>(null);
 
-  const touchStart = useRef<number | null>(null);
-  const touchEnd = useRef<number | null>(null);
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
   const minSwipeDistance = 50;
 
   const onTouchStart = (e: React.TouchEvent) => {
-    touchEnd.current = null; 
-    touchStart.current = e.targetTouches[0].clientX;
+    touchStartX.current = e.targetTouches[0].clientX;
+    touchStartY.current = e.targetTouches[0].clientY;
   };
 
   const onTouchMove = (e: React.TouchEvent) => {
-    touchEnd.current = e.targetTouches[0].clientX;
+    // Optional: Prevent default here if you want to disable scrolling while swiping horizontally
+    // but be careful as it might block vertical scrolling too if not checked properly.
   };
 
-  const onTouchEnd = () => {
-    if (!touchStart.current || !touchEnd.current) return;
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
     
-    const distance = touchStart.current - touchEnd.current;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+    
+    const deltaX = touchStartX.current - touchEndX;
+    const deltaY = touchStartY.current - touchEndY;
 
-    if (isLeftSwipe && currentSlide < 5) {
-       setCurrentSlide(currentSlide + 1);
+    // Check if horizontal swipe is dominant
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+      if (Math.abs(deltaX) > minSwipeDistance) {
+        if (deltaX > 0 && currentSlide < 5) {
+           setCurrentSlide(currentSlide + 1);
+        }
+        if (deltaX < 0 && currentSlide > 0) {
+           setCurrentSlide(currentSlide - 1);
+        }
+      }
     }
-    if (isRightSwipe && currentSlide > 0) {
-       setCurrentSlide(currentSlide - 1);
-    }
+    
+    touchStartX.current = null;
+    touchStartY.current = null;
   };
 
   const updateUnderline = (tab: 'items' | 'abilities' | 'tera') => {
