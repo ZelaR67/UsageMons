@@ -1,9 +1,7 @@
 import { useEffect, useState, useMemo, memo } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import * as ReactWindow from 'react-window';
-// @ts-ignore
-console.log('ReactWindow debug:', ReactWindow);
-const List = ReactWindow.FixedSizeList || ReactWindow.default?.FixedSizeList || ReactWindow.List || ReactWindow.default?.List || ReactWindow.default;
+const List = ReactWindow.FixedSizeList || (ReactWindow as any)['default']?.FixedSizeList || (ReactWindow as any)['List'] || (ReactWindow as any)['default']?.List || (ReactWindow as any)['default'];
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { Dropdown } from './Dropdown';
 import { PokemonSprite } from './PokemonSprite';
